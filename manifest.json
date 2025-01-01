@@ -1,13 +1,11 @@
 {
-  "manifest_version": 3,
-  "name": "Nuhuh",
-  "version": "1.0",
-  "permissions": ["storage", "activeTab"],
-  "action": {
-    "default_popup": "popup.html"
-  },
-  "content_scripts": [{
-    "matches": ["*://x.com/*", "*://twitter.com/*"],
-    "js": ["content.js"]
-  }]
+	"manifest_version": 3,
+	"name": "nuhuh",
+	"version": "1.0",
+	"description": "Removes twitter (currently x) communities from your timeline",
+	"permissions": ["activeTab", "scripting", "storage"],
+	"host_permissions": ["*://twitter.com/*", "*://x.com/*"],
+	"action": {
+		"default_popup": "popup.html"
+	}
 }

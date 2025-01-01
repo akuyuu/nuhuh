@@ -1,31 +1,59 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const textarea = document.getElementById('linksList');
-  const toggle = document.getElementById('filterToggle');
+document.addEventListener("DOMContentLoaded", () => {
+	const textarea = document.getElementById("links");
+	const toggle = document.getElementById("toggle");
 
-  chrome.storage.local.get(['filterLinks', 'isEnabled'], (result) => {
-    if (result.filterLinks) {
-      textarea.value = result.filterLinks.join('\n');
-    }
-    toggle.checked = result.isEnabled ?? true;
-  });
+	chrome.storage.local.get(["links", "hidePosts"], (data) => {
+		if (data.links) {
+			textarea.value = data.links.join("\n");
+			adjustTextareaHeight(textarea);
+		}
+		if (data.hidePosts !== undefined) {
+			toggle.checked = data.hidePosts;
+		}
+	});
 
-  textarea.addEventListener('input', () => {
-    const links = textarea.value.split('\n').filter(link => link.trim());
-    chrome.storage.local.set({ filterLinks: links }, () => {
-      chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { type: 'updateFilters' });
-      });
-    });
-  });
+	textarea.addEventListener("input", () => {
+		const links = textarea.value
+			.split("\n")
+			.map((link) => normalizeLink(link.trim()))
+			.filter((link) => link);
 
-  toggle.addEventListener('change', () => {
-    chrome.storage.local.set({ isEnabled: toggle.checked }, () => {
-      chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        chrome.tabs.sendMessage(tabs[0].id, { 
-          type: 'toggleFilter',
-          enabled: toggle.checked
-        });
-      });
-    });
-  });
+		const hidePosts = toggle.checked;
+
+		chrome.storage.local.set({ links, hidePosts }, () => {
+			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+				chrome.tabs.sendMessage(tabs[0].id, { action: "update" });
+			});
+		});
+
+		adjustTextareaHeight(textarea);
+	});
+
+	toggle.addEventListener("change", () => {
+		const links = textarea.value
+			.split("\n")
+			.map((link) => normalizeLink(link.trim()))
+			.filter((link) => link);
+
+		const hidePosts = toggle.checked;
+
+		chrome.storage.local.set({ links, hidePosts }, () => {
+			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+				chrome.tabs.sendMessage(tabs[0].id, { action: "update" });
+			});
+		});
+	});
 });
+
+function normalizeLink(link) {
+	const regex = /(https?:\/\/x\.com\/)?i\/communities\/(\d+)/;
+	const match = link.match(regex);
+	if (match) {
+		return `i/communities/${match[2]}`;
+	}
+	return null;
+}
+function adjustTextareaHeight(textarea) {
+	textarea.style.height = "auto";
+	textarea.style.height = `${textarea.scrollHeight}px`;
+}
